@@ -1,16 +1,34 @@
 import cors from "cors";
-import fs from "fs";
-import md5 from "md5";
-import express from 'express';
-import expressWs from 'express-ws';
-import * as WebSocket from 'ws';
+import express from "express";
+import expressWs from "express-ws";
+import * as WebSocket from "ws";
+import { saveChunk } from './utils/saveChunk';
 
-export interface MessageData {
-    data: string | null | undefined
-    fileName: string | undefined,
-    fileSize: number | undefined,
-    totalChunks: number,
-    chunkIndex: number,
+export interface UploadData {
+    data: string;
+    fileName: string;
+    fileSize: number;
+    totalChunks: number;
+    chunkIndex: number;
+}
+
+export interface Message {
+    type: MessageType;
+    payload?: Payload;
+}
+
+export interface SuccessUploadData {
+    finalFileName: string;
+}
+
+export type Payload = UploadData | SuccessUploadData;
+
+export enum MessageType {
+    DATA = "Data",
+    START_UPLOAD = "Start upload",
+    FINISH_UPLOAD = "Finish upload",
+    START_DOWNLOAD = "Start download",
+    FINISH_DOWNLOAD = "Finish download",
 }
 
 const baseApp = express();
@@ -24,47 +42,23 @@ app.use(
 );
 app.use("/uploads", express.static("uploads"));
 
-app.ws('/upload-file', (ws: WebSocket, req) => {
-    ws.on('message', (message: string) => {
-        const messageData: MessageData = JSON.parse(message);
-        console.log(messageData);
+app.ws("/upload", (ws: WebSocket, req) => {
+    ws.on("message", (message: string) => {
+        const { type, payload }: Message = JSON.parse(message);
 
-        const { data, fileName, fileSize, totalChunks, chunkIndex } = messageData;
-
-        const firstChunk = chunkIndex === 0;
-        const lastChunk = chunkIndex === totalChunks - 1;
-
-        const [ext] = fileName.split(".").reverse();
-        const [_, binaryData] = data.split(",");
-
-        const buffer = Buffer.from(binaryData, "base64");
-        const tmpFilename = "tmp_" + md5(fileName + req.socket.remoteAddress) + "." + ext;
-
-        if (firstChunk && fs.existsSync("./uploads/" + tmpFilename)) {
-            fs.unlinkSync("./uploads/" + tmpFilename);
+        switch (type) {
+            case MessageType.DATA:
+                saveChunk(payload as UploadData, ws, req)
         }
-
-        fs.appendFileSync("./uploads/" + tmpFilename, buffer);
-
-        if (!lastChunk) {
-            // ws.send("OK");
-
-            return;
-        }
-
-        const finalFilename = md5([Date.now()]).slice(0, 6) + "." + ext;
-
-        fs.renameSync("./uploads/" + tmpFilename, "./uploads/" + finalFilename);
-
-        ws.send(finalFilename);
     });
 
-
-    ws.send('Success started WS server');
-
-    ws.on('close', () => {
-        console.log('WebSocket was closed');
+    ws.on("close", () => {
+        console.log("WebSocket was closed");
     });
-})
+});
+
+// app.ws("/download", (ws: WebSocket, req) => {
+//     ws.on("message", (message: string) => {});
+// });
 
 app.listen(process.env.PORT || 8999);

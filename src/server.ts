@@ -4,7 +4,7 @@ import expressWs from "express-ws";
 import * as WebSocket from "ws";
 import { saveChunk } from './utils/saveChunk';
 
-export interface UploadData {
+export interface UploadFile {
     data: string;
     fileName: string;
     fileSize: number;
@@ -12,18 +12,18 @@ export interface UploadData {
     chunkIndex: number;
 }
 
-export interface Message {
-    type: MessageType;
+export interface SocketMessage {
+    type: SocketMessageType;
     payload?: Payload;
 }
 
-export interface SuccessUploadData {
+export interface SuccessUploadFile {
     finalFileName: string;
 }
 
-export type Payload = UploadData | SuccessUploadData;
+export type Payload = UploadFile | SuccessUploadFile;
 
-export enum MessageType {
+export enum SocketMessageType {
     DATA = "Data",
     START_UPLOAD = "Start upload",
     FINISH_UPLOAD = "Finish upload",
@@ -44,11 +44,11 @@ app.use("/uploads", express.static("uploads"));
 
 app.ws("/upload", (ws: WebSocket, req) => {
     ws.on("message", (message: string) => {
-        const { type, payload }: Message = JSON.parse(message);
+        const { type, payload }: SocketMessage = JSON.parse(message);
 
         switch (type) {
-            case MessageType.DATA:
-                saveChunk(payload as UploadData, ws, req)
+            case SocketMessageType.DATA:
+                saveChunk(payload as UploadFile, ws, req)
         }
     });
 
@@ -58,7 +58,7 @@ app.ws("/upload", (ws: WebSocket, req) => {
 });
 
 // app.ws("/download", (ws: WebSocket, req) => {
-//     ws.on("message", (message: string) => {});
+//     ws.on("SocketMessage", (SocketMessage: string) => {});
 // });
 
 app.listen(process.env.PORT || 8999);

@@ -1,24 +1,39 @@
 import cors from "cors";
-import express from "express";
+import express, { Request } from "express";
 import expressWs from "express-ws";
 import * as WebSocket from "ws";
-import { saveChunk } from './utils/saveChunk';
+import { saveFileChunk } from "./utils/saveFileChunk";
+import { sendFileChunk } from "./utils/sendFileChunk";
 
 export interface UploadFile {
     data: string;
-    fileName: string;
     fileSize: number;
     totalChunks: number;
     chunkIndex: number;
 }
 
-export interface SocketMessage {
+export interface SocketMessage<T> {
     type: SocketMessageType;
-    payload?: Payload;
+    payload?: T;
 }
 
 export interface SuccessUploadFile {
     finalFileName: string;
+}
+
+export interface RequestDownloadFile extends Request<any, any, any, any> {
+    params: {
+        file: string;
+    };
+}
+
+export type RequestUploadFile = RequestDownloadFile;
+
+export interface DownloadFile {
+    data: Buffer;
+    fileSize: number;
+    totalChunks: number;
+    chunkIndex: number;
 }
 
 export type Payload = UploadFile | SuccessUploadFile;
@@ -42,13 +57,13 @@ app.use(
 );
 app.use("/uploads", express.static("uploads"));
 
-app.ws("/upload", (ws: WebSocket, req) => {
+app.ws("/upload/file/:file", (ws: WebSocket, req: RequestUploadFile) => {
     ws.on("message", (message: string) => {
-        const { type, payload }: SocketMessage = JSON.parse(message);
+        const { type, payload }: SocketMessage<UploadFile> = JSON.parse(message);
 
         switch (type) {
             case SocketMessageType.DATA:
-                saveChunk(payload as UploadFile, ws, req)
+                saveFileChunk(payload, ws, req);
         }
     });
 
@@ -57,8 +72,15 @@ app.ws("/upload", (ws: WebSocket, req) => {
     });
 });
 
-// app.ws("/download", (ws: WebSocket, req) => {
-//     ws.on("SocketMessage", (SocketMessage: string) => {});
-// });
+app.ws("/download/file/:file", (ws: WebSocket, req: RequestDownloadFile) => {
+    ws.on("message", (message: string) => {
+        const { type }: SocketMessage<void> = JSON.parse(message);
+
+        switch (type) {
+            case SocketMessageType.START_DOWNLOAD:
+                sendFileChunk(ws, req);
+        }
+    });
+});
 
 app.listen(process.env.PORT || 8999);

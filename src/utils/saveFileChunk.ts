@@ -1,12 +1,25 @@
 import fs from "fs";
 import md5 from "md5";
-import { SocketMessage, SocketMessageType, UploadFile } from "./../server";
 import * as WebSocket from "ws";
+import {
+    RequestUploadFile,
+    SocketMessage,
+    SocketMessageType,
+    SuccessUploadFile,
+    UploadFile,
+} from "../server";
 
-export function saveChunk(payload: UploadFile, ws: WebSocket, req): void {
-    const { data, fileName, totalChunks, chunkIndex }: UploadFile = payload;
-
+export function saveFileChunk(
+    payload: UploadFile,
+    ws: WebSocket,
+    req: RequestUploadFile
+): void {
+    const encodedFilename = req.params.file;
+    const fileName = decodeURIComponent(encodedFilename);
     const [ext] = fileName.split(".").reverse();
+
+    const { data, totalChunks, chunkIndex }: UploadFile = payload;
+
     const [binaryData] = data.split(",").reverse();
 
     const buffer = Buffer.from(binaryData, "base64");
@@ -23,11 +36,11 @@ export function saveChunk(payload: UploadFile, ws: WebSocket, req): void {
         return;
     }
 
-    const finalFileName = md5([Date.now()]).slice(0, 6) + "." + ext;
+    const finalFileName = md5(fileName) + "." + ext;
 
     fs.renameSync("./uploads/" + tmpFilename, "./uploads/" + finalFileName);
 
-    const successUploadSocketMessage: SocketMessage = {
+    const successUploadSocketMessage: SocketMessage<SuccessUploadFile> = {
         type: SocketMessageType.FINISH_UPLOAD,
         payload: {
             finalFileName,

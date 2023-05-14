@@ -1,11 +1,13 @@
+import { Request } from "express";
 import fs from "fs";
 import md5 from "md5";
 import * as WebSocket from "ws";
-import { DownloadFile, RequestDownloadFile, SocketMessage, SocketMessageType } from "../server";
+import { DownloadFile } from "../contracts/download-file";
+import { SocketMessage, SocketMessageType } from "../contracts/socket-message";
 
 const CHUNK_SIZE: number = 15 * 1e3;
 
-export function sendFileChunk(ws: WebSocket, req: RequestDownloadFile): void {
+export function sendFileChunk(ws: WebSocket, req: Request): void {
     const encodedFilename = req.params.file;
     const fileName = decodeURIComponent(encodedFilename);
 

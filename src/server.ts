@@ -4,47 +4,8 @@ import expressWs from "express-ws";
 import * as WebSocket from "ws";
 import { saveFileChunk } from "./utils/saveFileChunk";
 import { sendFileChunk } from "./utils/sendFileChunk";
-
-export interface UploadFile {
-    data: string;
-    fileSize: number;
-    totalChunks: number;
-    chunkIndex: number;
-}
-
-export interface SocketMessage<T> {
-    type: SocketMessageType;
-    payload?: T;
-}
-
-export interface SuccessUploadFile {
-    finalFileName: string;
-}
-
-export interface RequestDownloadFile extends Request<any, any, any, any> {
-    params: {
-        file: string;
-    };
-}
-
-export type RequestUploadFile = RequestDownloadFile;
-
-export interface DownloadFile {
-    data: Buffer;
-    fileSize: number;
-    totalChunks: number;
-    chunkIndex: number;
-}
-
-export type Payload = UploadFile | SuccessUploadFile;
-
-export enum SocketMessageType {
-    DATA = "Data",
-    START_UPLOAD = "Start upload",
-    FINISH_UPLOAD = "Finish upload",
-    START_DOWNLOAD = "Start download",
-    FINISH_DOWNLOAD = "Finish download",
-}
+import { SocketMessage, SocketMessageType } from "./contracts/socket-message";
+import { UploadFile } from "./contracts/upload-file";
 
 const baseApp = express();
 const wsInstance = expressWs(baseApp);
@@ -57,13 +18,16 @@ app.use(
 );
 app.use("/uploads", express.static("uploads"));
 
-app.ws("/upload/file/:file", (ws: WebSocket, req: RequestUploadFile) => {
+app.ws("/upload/file/:file", (ws: WebSocket, req: Request) => {
     ws.on("message", (message: string) => {
-        const { type, payload }: SocketMessage<UploadFile> = JSON.parse(message);
+        const { type, payload }: SocketMessage<UploadFile> =
+            JSON.parse(message);
 
         switch (type) {
             case SocketMessageType.DATA:
-                saveFileChunk(payload, ws, req);
+                if (payload) {
+                    saveFileChunk(payload, ws, req);
+                }
         }
     });
 
@@ -72,7 +36,7 @@ app.ws("/upload/file/:file", (ws: WebSocket, req: RequestUploadFile) => {
     });
 });
 
-app.ws("/download/file/:file", (ws: WebSocket, req: RequestDownloadFile) => {
+app.ws("/download/file/:file", (ws: WebSocket, req: Request) => {
     ws.on("message", (message: string) => {
         const { type }: SocketMessage<void> = JSON.parse(message);
 
@@ -83,4 +47,6 @@ app.ws("/download/file/:file", (ws: WebSocket, req: RequestDownloadFile) => {
     });
 });
 
-app.listen(process.env.PORT || 8999);
+app.listen(process.env.PORT || 8999, () => {
+    console.log(`Server started at port`);
+});

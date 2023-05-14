@@ -1,19 +1,11 @@
+import { Request } from "express";
 import fs from "fs";
 import md5 from "md5";
 import * as WebSocket from "ws";
-import {
-    RequestUploadFile,
-    SocketMessage,
-    SocketMessageType,
-    SuccessUploadFile,
-    UploadFile,
-} from "../server";
+import { SocketMessage, SocketMessageType } from "../contracts/socket-message";
+import { SuccessUploadFile, UploadFile } from "../contracts/upload-file";
 
-export function saveFileChunk(
-    payload: UploadFile,
-    ws: WebSocket,
-    req: RequestUploadFile
-): void {
+export function saveFileChunk(payload: UploadFile, ws: WebSocket, req: Request): void {
     const encodedFilename = req.params.file;
     const fileName = decodeURIComponent(encodedFilename);
     const [ext] = fileName.split(".").reverse();

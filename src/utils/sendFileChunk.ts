@@ -1,13 +1,13 @@
 import { Request } from 'express';
 import fs from 'fs';
+import Fs from 'fs/promises';
 import md5 from 'md5';
 import * as WebSocket from 'ws';
 import { DownloadFile } from '../contracts/download-file';
 import { SocketMessage, SocketMessageType } from '../contracts/socket-message';
+import { CHUNK_SIZE } from '../config';
 
-const CHUNK_SIZE: number = 15 * 1e3;
-
-export function sendFileChunk(ws: WebSocket, req: Request): void {
+export async function sendFileChunk(ws: WebSocket, req: Request): Promise<void> {
     const encodedFilename = req.params.file;
     const fileName = decodeURIComponent(encodedFilename);
 
@@ -20,21 +20,16 @@ export function sendFileChunk(ws: WebSocket, req: Request): void {
         return;
     }
 
-    const file = fs.readFileSync(filePath);
+    const fileSize = (await Fs.stat(filePath)).size;
+    const totalChunks = Math.ceil(fileSize / CHUNK_SIZE);
 
-    const totalChunks = Math.ceil(file.length / CHUNK_SIZE);
+    const fileStream = fs.createReadStream(filePath, { highWaterMark: CHUNK_SIZE });
 
-    for (
-        let bytesRead = 0;
-        bytesRead < file.length;
-        bytesRead = bytesRead + CHUNK_SIZE
-    ) {
-        const buffer = file.subarray(bytesRead, bytesRead + CHUNK_SIZE);
-
+    let chunkIndex = 1;
+    for await (const data of fileStream) {
         const payload: DownloadFile = {
-            data: buffer,
-            fileSize: file.length,
-            chunkIndex: bytesRead / CHUNK_SIZE + 1,
+            data,
+            chunkIndex,
             totalChunks,
         };
 
@@ -44,6 +39,7 @@ export function sendFileChunk(ws: WebSocket, req: Request): void {
         };
 
         ws.send(JSON.stringify(message));
+        chunkIndex++;
     }
 }
 

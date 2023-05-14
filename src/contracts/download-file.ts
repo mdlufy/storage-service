@@ -1,6 +1,8 @@
 export interface DownloadFile {
-    data: Buffer;
-    fileSize: number;
+    data: {
+        type: 'Buffer';
+        data: number[];
+    };
     totalChunks: number;
     chunkIndex: number;
 }

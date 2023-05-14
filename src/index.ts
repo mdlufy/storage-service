@@ -6,8 +6,7 @@ import { saveFileChunk } from './utils/saveFileChunk';
 import { sendFileChunk } from './utils/sendFileChunk';
 import { SocketMessage, SocketMessageType } from './contracts/socket-message';
 import { UploadFile } from './contracts/upload-file';
-
-const PORT = process.env.PORT || 8000;
+import { PORT } from './config';
 
 const baseApp = express();
 const wsInstance = expressWs(baseApp);

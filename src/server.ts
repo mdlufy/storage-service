@@ -1,11 +1,11 @@
-import cors from "cors";
-import express, { Request } from "express";
-import expressWs from "express-ws";
-import * as WebSocket from "ws";
-import { saveFileChunk } from "./utils/saveFileChunk";
-import { sendFileChunk } from "./utils/sendFileChunk";
-import { SocketMessage, SocketMessageType } from "./contracts/socket-message";
-import { UploadFile } from "./contracts/upload-file";
+import cors from 'cors';
+import express, { Request } from 'express';
+import expressWs from 'express-ws';
+import * as WebSocket from 'ws';
+import { saveFileChunk } from './utils/saveFileChunk';
+import { sendFileChunk } from './utils/sendFileChunk';
+import { SocketMessage, SocketMessageType } from './contracts/socket-message';
+import { UploadFile } from './contracts/upload-file';
 
 const baseApp = express();
 const wsInstance = expressWs(baseApp);
@@ -13,13 +13,13 @@ const app = wsInstance.app;
 
 app.use(
     cors({
-        origin: "http://localhost:3000",
+        origin: 'http://localhost:3000',
     })
 );
-app.use("/uploads", express.static("uploads"));
+app.use('/uploads', express.static('uploads'));
 
-app.ws("/upload/file/:file", (ws: WebSocket, req: Request) => {
-    ws.on("message", (message: string) => {
+app.ws('/upload/file/:file', (ws: WebSocket, req: Request) => {
+    ws.on('message', (message: string) => {
         const { type, payload }: SocketMessage<UploadFile> =
             JSON.parse(message);
 
@@ -31,13 +31,13 @@ app.ws("/upload/file/:file", (ws: WebSocket, req: Request) => {
         }
     });
 
-    ws.on("close", () => {
-        console.log("WebSocket was closed");
+    ws.on('close', () => {
+        console.log('WebSocket was closed');
     });
 });
 
-app.ws("/download/file/:file", (ws: WebSocket, req: Request) => {
-    ws.on("message", (message: string) => {
+app.ws('/download/file/:file', (ws: WebSocket, req: Request) => {
+    ws.on('message', (message: string) => {
         const { type }: SocketMessage<void> = JSON.parse(message);
 
         switch (type) {

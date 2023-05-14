@@ -7,6 +7,8 @@ import { sendFileChunk } from './utils/sendFileChunk';
 import { SocketMessage, SocketMessageType } from './contracts/socket-message';
 import { UploadFile } from './contracts/upload-file';
 
+const PORT = process.env.PORT || 8000;
+
 const baseApp = express();
 const wsInstance = expressWs(baseApp);
 const app = wsInstance.app;
@@ -47,6 +49,6 @@ app.ws('/download/file/:file', (ws: WebSocket, req: Request) => {
     });
 });
 
-app.listen(process.env.PORT || 8999, () => {
-    console.log(`Server started at port`);
+app.listen(PORT, () => {
+    console.log(`Server started at port ${PORT}`);
 });

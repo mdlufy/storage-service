@@ -1,22 +1,16 @@
-import cors from 'cors';
 import express, { Request } from 'express';
 import expressWs from 'express-ws';
 import * as WebSocket from 'ws';
-import { saveFileChunk } from './utils/saveFileChunk';
-import { sendFileChunk } from './utils/sendFileChunk';
+import { HOST, PORT } from './config';
 import { SocketMessage, SocketMessageType } from './contracts/socket-message';
 import { UploadFile } from './contracts/upload-file';
-import { PORT } from './config';
+import { saveFileChunk } from './utils/saveFileChunk';
+import { sendFileChunk } from './utils/sendFileChunk';
 
 const baseApp = express();
 const wsInstance = expressWs(baseApp);
 const app = wsInstance.app;
 
-app.use(
-    cors({
-        origin: 'http://localhost:3000',
-    })
-);
 app.use('/uploads', express.static('uploads'));
 
 app.ws('/upload/file/:file', (ws: WebSocket, req: Request) => {
@@ -48,6 +42,6 @@ app.ws('/download/file/:file', (ws: WebSocket, req: Request) => {
     });
 });
 
-app.listen(PORT, () => {
-    console.log(`Server started at port ${PORT}`);
+app.listen(PORT, HOST, () => {
+    console.log(`Server started at port http://${HOST}:${PORT}`);
 });

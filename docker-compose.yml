@@ -1,0 +1,6 @@
+version: '3.8'
+services:
+  web:
+    image: mdlufy/node-storage-app
+    ports:
+      - "49160:8999"

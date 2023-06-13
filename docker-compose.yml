@@ -4,3 +4,7 @@ services:
     image: mdlufy/node-storage-app
     ports:
       - "49160:8999"
+    volumes:
+      - storage-data:/usr/src/app/uploads
+volumes:
+  storage-data:
